@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Osu! PP & Skill Profiler</title>
+    <!-- Include Outfit Font from Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <!-- Include Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="glass-bg"></div>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <span class="logo-icon">🎯</span>
+                <h1>Osu! Profiler</h1>
+            </div>
+            
+            <div class="user-section">
+                <h2>Profiles</h2>
+                <ul id="user-list">
+                    <!-- User list loaded dynamically -->
+                </ul>
+            </div>
+            
+            <div class="upload-section">
+                <h2>Analyze Replay</h2>
+                <div id="drop-zone" class="drop-zone">
+                    <span class="upload-icon">📥</span>
+                    <p>Drag & Drop <strong>.osr</strong> here</p>
+                    <p class="subtext">or click to browse</p>
+                    <input type="file" id="file-input" accept=".osr" style="display: none;">
+                </div>
+            </div>
+        </aside>
+        
+        <!-- Main Dashboard -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="profile-header">
+                <div class="player-info">
+                    <span class="avatar">👤</span>
+                    <div>
+                        <h2 id="active-username">Select a Profile</h2>
+                        <p id="player-subtitle">Skill profile dashboard</p>
+                    </div>
+                </div>
+                <div class="quick-stats">
+                    <div class="stat-card">
+                        <span class="stat-value" id="stat-total-plays">-</span>
+                        <span class="stat-label">Total Plays</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-value" id="stat-avg-acc">-</span>
+                        <span class="stat-label">Avg Accuracy</span>
+                    </div>
+                    <div class="stat-card font-neon">
+                        <span class="stat-value" id="stat-avg-ur">-</span>
+                        <span class="stat-label">Avg UR</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-value" id="stat-avg-aim">-</span>
+                        <span class="stat-label">Avg Aim Error</span>
+                    </div>
+                </div>
+            </header>
+            
+            <!-- Dashboard Grid -->
+            <div class="dashboard-grid">
+                <!-- Skill Chart -->
+                <section class="panel skill-chart-panel">
+                    <h3>Personalized Skill Profiling</h3>
+                    <div class="chart-container">
+                        <canvas id="skillRadarChart"></canvas>
+                    </div>
+                </section>
+                
+                <!-- Recommendations / Summary -->
+                <section class="panel skill-summary-panel">
+                    <h3>Performance Diagnostics</h3>
+                    <div id="skill-description" class="skill-description">
+                        Select a profile on the sidebar to view automated player diagnostics and suggestions.
+                    </div>
+                </section>
+            </div>
+            
+            <!-- Play History Table -->
+            <section class="panel table-panel">
+                <h3>Play History</h3>
+                <div class="table-scroll">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Beatmap Title</th>
+                                <th>Difficulty</th>
+                                <th>Accuracy</th>
+                                <th>Unstable Rate</th>
+                                <th>Aim Error (px)</th>
+                                <th>Mods</th>
+                                <th>Diagnostic</th>
+                            </tr>
+                        </thead>
+                        <tbody id="play-history-body">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+    
+    <!-- Diagnostic Details Modal -->
+    <div id="details-modal" class="modal">
+        <div class="modal-content glass-card">
+            <header class="modal-header">
+                <div>
+                    <h3 id="modal-map-title">Map Title</h3>
+                    <p id="modal-map-diff">Difficulty Name</p>
+                </div>
+                <span class="close-btn" id="close-modal-btn">&times;</span>
+            </header>
+            
+            <div class="modal-body">
+                <div class="modal-chart-panel">
+                    <h4>Aim Landing Scatter (px relative to center)</h4>
+                    <div class="modal-chart-container">
+                        <canvas id="modalScatterChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="modal-chart-panel">
+                    <h4>Timing Offset Distribution (ms early/late)</h4>
+                    <div class="modal-chart-container2">
+                        <canvas id="modalTimingChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <footer class="modal-footer">
+                <div class="modal-stat">
+                    <span class="modal-stat-label">Accuracy:</span>
+                    <span class="modal-stat-value" id="modal-stat-acc">-</span>
+                </div>
+                <div class="modal-stat">
+                    <span class="modal-stat-label">Unstable Rate:</span>
+                    <span class="modal-stat-value" id="modal-stat-ur">-</span>
+                </div>
+                <div class="modal-stat">
+                    <span class="modal-stat-label">Aim Error:</span>
+                    <span class="modal-stat-value" id="modal-stat-aim">-</span>
+                </div>
+            </footer>
+        </div>
+    </div>
+    
+    <script src="app.js"></script>
+</body>
+</html>

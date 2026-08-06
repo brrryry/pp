@@ -1,0 +1,26 @@
+# Exclude Python virtual environment (contains Windows-specific binaries)
+.venv*/
+venv*/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Exclude server dynamic data (mounted as a volume at runtime, not needed in static image)
+server/data/maps/
+
+# Exclude developer workspace metadata and conversation files
+.git/
+.gitignore
+.agents/
+.gemini/
+*.log
+walkthrough.md
+task.md
+implementation_plan.md
+
+# Exclude frontend source code and node_modules (only the built static/ output is needed)
+frontend/
+
+# Exclude client-only code (only runs on user's gaming PC, not server)
+client/

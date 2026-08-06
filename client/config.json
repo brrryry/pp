@@ -1,0 +1,7 @@
+{
+    "server_url": "http://127.0.0.1:8000",
+    "osu_path": "",
+    "songs_path": "",
+    "watch_lazer": true,
+    "watch_stable": true
+}
