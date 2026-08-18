@@ -1,196 +1,110 @@
-# Osu! PP & Skill Profiler
+# 🎯 PP Recommender
 
-A self-hosted performance profiler for osu! that analyzes replays and generates
-multi-axis skill profiles (Snap Aim, Flow Aim, Speed, Streaming, Stamina, etc.).
-
-## Architecture
-
-```
-┌──────────────────────┐          ┌──────────────────────────────────┐
-│   Gaming PC          │          │   Server  (Docker on NAS)        │
-│                      │  upload  │                                  │
-│  companion.py        ├─────────►│  FastAPI   ←──►  SQLite + Redis  │
-│  (watches replays)   │  /api/   │  (analysis)     (cache & data)   │
-│                      │          │                                  │
-│                      │  browse  │  Vite/React                      │
-│  Web browser         ◄─────────┤  (frontend)                      │
-└──────────────────────┘  :8000   └──────────────────────────────────┘
-```
-
-| Component         | Location     | Runs on       |
-|-------------------|-------------|---------------|
-| Desktop companion | `client/`   | Your gaming PC |
-| FastAPI server    | `server/`   | NAS (Docker)   |
-| React frontend    | `frontend/` | Built → `static/`, served by FastAPI |
-| Feature extraction| `src/`      | Imported by server |
+This repository stores an organized version of code that I wrote to build an Osu! map recommender. This recommender embeds maps using a Variational Autoencoder (VAE) and uses Alternating Least Squares (ALS) to create a recommendation algorithm.
 
 ---
 
-## Development (your PC)
+## 🌟 Key Features
 
-### Prerequisites
-
-- Python 3.11+
-- Node.js 18+ and npm
-
-### Backend
-
-```bash
-# Create venv and install dependencies
-python -m venv .venv311
-.venv311\Scripts\activate        # Windows
-pip install -r requirements.txt
-
-# Start the FastAPI server
-cd server
-uvicorn main:app --reload --port 8000
-```
-
-### Frontend
-
-```bash
-cd frontend
-npm install
-npm run dev          # Starts Vite dev server on http://localhost:3000
-                     # API requests are proxied to http://localhost:8000
-```
-
-Open `http://localhost:3000` in your browser during development.
-The Vite dev server hot-reloads on file changes.
+- **📊 Axis-Free Map Profiling**: Given the raw map data, our embedding model outputs a compressed 128-dimensional vector.
+- **🌫️ Map Visualization**: Projects 128D VAE beatmap embeddings onto a interactive 2D spatial map (using Uniform Manifold Approximation and Projection (UMAP)) to visualize mastered and unplayed skill territories.
+- **🤖 ALS Recommendation Engine**: Implicit feedback matrix factorization trained on player mastery scores, providing personalized map recommendations.
+- **🔁 Retraining Pipeline with Quality Gates**: Automated model retraining pipeline with validation loss threshold checks and deployment archiving.
+- **⚡ Dual Storage Backend**: Supports high-performance **PostgreSQL** and lightweight **SQLite** with **Redis** job queues (`rq`) and multi-layer caching.
 
 ---
 
-## Production Deployment (NAS)
-
-### What you need on the NAS
-
-- Docker and Docker Compose (most UGreen NAS models support this via the app store)
-- SSH or file manager access to copy files
-
-### Step-by-step
-
-#### 1. Copy the project to your NAS
-
-```bash
-# Via Git (if your NAS has git)
-git clone <your-repo-url> /path/to/pp
-
-# Or copy via SCP / SMB from your PC
-scp -r C:\Users\...\pp  user@nas-ip:/path/to/pp
-```
-
-#### 2. Build the frontend
-
-The frontend must be compiled before building the Docker image.
-You can do this on your PC (recommended) or on the NAS if it has Node.js.
-
-```bash
-cd frontend
-npm ci                # Clean install from lockfile
-npm run build         # Compiles React app → outputs to ../static/
-```
-
-After this, `static/` will contain the production-ready `index.html` and
-hashed JS/CSS bundles. Copy the built `static/` folder to the NAS if you
-built on your PC.
-
-#### 3. Build and start containers
-
-```bash
-cd /path/to/pp        # On the NAS
-docker-compose up -d --build
-```
-
-This starts two containers:
-
-| Container      | Purpose                                    |
-|----------------|--------------------------------------------|
-| `web`          | FastAPI server on port 8000                |
-| `redis-cache`  | In-memory cache for map skills & path hashes |
-
-#### 4. Access the profiler
-
-Open `http://<NAS-IP>:8000` from any device on your network.
-
-### Persistent data
-
-The `server/data/` directory is mounted as a Docker volume
-(`./server/data:/app/server/data`), so your SQLite database, replays,
-and cached maps survive container rebuilds.
-
-To back up your data, just copy the `server/data/` directory.
-
-### Updating
-
-```bash
-cd /path/to/pp
-
-# Pull latest code
-git pull
-
-# Rebuild frontend (on PC or NAS)
-cd frontend && npm ci && npm run build && cd ..
-
-# Rebuild and restart containers
-docker-compose up -d --build
-```
-
-### Alternative: Pre-built image transfer
-
-If your NAS has a weak CPU and `docker build` is slow:
-
-```bash
-# On your PC
-docker build -t osu-profiler .
-docker save osu-profiler | gzip > osu-profiler.tar.gz
-
-# Transfer to NAS
-scp osu-profiler.tar.gz user@nas-ip:/path/to/
-
-# On the NAS
-docker load < osu-profiler.tar.gz
-docker-compose up -d
-```
-
----
-
-## Project Structure
+## 📐 Project Architecture
 
 ```
 pp/
-├── client/              # Desktop companion (runs on gaming PC)
-│   └── companion.py     #   Watches replay folder, uploads to server
-├── frontend/            # React + Vite source code
-│   ├── package.json
-│   ├── vite.config.js
-│   ├── index.html       #   Vite HTML entry point
-│   └── src/             #   React components and views
-├── server/              # FastAPI backend
-│   ├── main.py          #   API endpoints and analysis pipeline
-│   ├── parser.py        #   .osu file format parser
-│   ├── features.py      #   Map feature extraction (11-axis skills)
-│   ├── config.py        #   Server configuration
-│   └── data/            #   Runtime data (mounted volume in Docker)
-│       ├── cache.db     #     SQLite: replay hits, map cache
-│       ├── replays/     #     Uploaded .osr files + replays_summary.csv
-│       └── maps/        #     Downloaded .osu beatmap files
-├── src/                 # Shared source modules
-│   └── features.py      #   Feature extraction utilities
-├── static/              # Built frontend output (generated by Vite)
-├── Dockerfile
-├── docker-compose.yml
-├── .dockerignore
-└── requirements.txt
+├── server/           # FastAPI backend, DB pool, RQ background workers, API endpoints
+├── model_training/   # PyTorch MapVAE training, ALS matrix factorization, seeding scripts
+├── frontend/         # React + Vite frontend (Fog of War canvas, User Profiles, Search)
+├── static/           # Production static web assets
+└── docker-compose.yml # Containerized orchestration (PostgreSQL, Redis, Web App)
 ```
 
 ---
 
-## API Endpoints
+## 🚀 Quickstart & Setup
 
-| Method | Path                        | Description                          |
-|--------|-----------------------------|--------------------------------------|
-| POST   | `/api/analyze`              | Upload and analyze a replay + beatmap |
-| GET    | `/api/user/{username}`      | Player profile and skill averages    |
-| GET    | `/api/map/{beatmap_hash}`   | Beatmap details and leaderboard      |
-| GET    | `/api/hits/{replay_basename}` | Raw hit data for diagnostic plots  |
-| GET    | `/api/leaderboard`          | Global leaderboard                   |
+### Prerequisites
+- **Python 3.10+**
+- **Node.js 18+**
+- **Redis & PostgreSQL** (or Docker)
+
+### 1. Backend Setup (`server/`)
+```bash
+# Navigate to server directory
+cd server
+
+# Create virtual environment
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Configure environment variables (copy template)
+cp .env.example .env
+
+# Run FastAPI server
+python main.py
+```
+The backend API will run at `http://127.0.0.1:8000` (API docs at `http://127.0.0.1:8000/docs`).
+
+### 2. Frontend Setup (`frontend/`)
+```bash
+# Navigate to frontend directory
+cd frontend
+
+# Install Node dependencies
+npm install
+
+# Start Vite dev server
+npm run dev
+```
+The frontend dev server will run at `http://localhost:3000` with hot module reloading (HMR) and backend proxying.
+
+---
+
+## 🐳 Docker Deployment
+
+To launch the full stack (PostgreSQL, Redis, and Web App) with containerized environment variables:
+
+```bash
+# Build frontend bundle for production
+cd frontend && npm install && npm run build && cd ..
+
+# Start containers
+docker-compose up --build
+```
+
+---
+
+## ⚙️ Environment Configuration
+
+Both `server/` and `model_training/` use environment variables backed by standard `.env` files. See:
+- [`server/.env.example`](file:///c:/Users/thisi/Desktop/pp/server/.env.example)
+- [`model_training/.env.example`](file:///c:/Users/thisi/Desktop/pp/model_training/.env.example)
+
+Key variables include:
+- `DATABASE_URL`: PostgreSQL connection URI (`postgresql://user:pass@host:5432/dbname`)
+- `REDIS_URL`: Redis URI (`redis://localhost:6379/0`)
+- `OSU_API_CLIENT_ID` / `OSU_API_CLIENT_SECRET`: Official osu! v2 API credentials
+
+---
+
+## 📚 Component Documentation
+
+Detailed guides for individual modules:
+- [Backend Documentation (`server/README.md`)](file:///c:/Users/thisi/Desktop/pp/server/README.md)
+- [Machine Learning & Pipeline Documentation (`model_training/README.md`)](file:///c:/Users/thisi/Desktop/pp/model_training/README.md)
+- [Frontend Web App Documentation (`frontend/README.md`)](file:///c:/Users/thisi/Desktop/pp/frontend/README.md)
+
+---
+
+## 📄 License
+
+Distributed under the MIT License.

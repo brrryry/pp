@@ -1,0 +1,12 @@
+# Training Models & Weights
+models/
+*.pth
+*.pkl
+*.npy
+*.joblib
+
+# Local Data Storage
+data/
+*.db
+*.db-journal
+*.db-wal

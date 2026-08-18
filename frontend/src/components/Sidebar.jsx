@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 
 function Sidebar() {
   const [users, setUsers] = useState([])
+  const [searchQuery, setSearchQuery] = useState('')
   const [uploading, setUploading] = useState(false)
   const [uploadFileName, setUploadFileName] = useState('')
   const [isDragOver, setIsDragOver] = useState(false)
@@ -10,6 +11,15 @@ function Sidebar() {
   
   const navigate = useNavigate()
   const { player } = useParams()
+
+  const filteredUsers = searchQuery.trim()
+    ? users.filter((username) =>
+        username.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : []
+
+  const displayedUsers = filteredUsers.slice(0, 10)
+  const remainingCount = filteredUsers.length - displayedUsers.length
 
   const loadUsers = async () => {
     try {
@@ -56,6 +66,7 @@ function Sidebar() {
       // Reload user list and navigate to new player profile
       await loadUsers()
       navigate(`/player/${newPlayer}`)
+      setSearchQuery('')
     } catch (err) {
       alert(`Analysis Failed: ${err.message}`)
       console.error(err)
@@ -94,21 +105,61 @@ function Sidebar() {
       
       <div className="user-section">
         <h2>Profiles</h2>
+        <div className="search-bar-container">
+          <input
+            type="text"
+            className="search-input"
+            placeholder="Search players..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          {searchQuery && (
+            <button className="search-clear-btn" onClick={() => setSearchQuery('')}>
+              ✕
+            </button>
+          )}
+        </div>
         <ul id="user-list">
           {users.length === 0 ? (
             <li className="subtext" style={{ padding: '10px' }}>
               No profiles yet. Upload a replay to begin!
             </li>
-          ) : (
-            users.map((username) => (
+          ) : searchQuery.trim() === '' ? (
+            player ? (
               <li
-                key={username}
-                className={`user-item ${player === username ? 'active' : ''}`}
-                onClick={() => handleUserClick(username)}
+                key={player}
+                className="user-item active"
+                onClick={() => handleUserClick(player)}
               >
-                👤 <span style={{ marginLeft: '8px' }}>{username}</span>
+                👤 <span style={{ marginLeft: '8px' }}>{player}</span>
               </li>
-            ))
+            ) : (
+              <li className="subtext" style={{ padding: '10px', fontSize: '12px' }}>
+                Search above to find a player profile.
+              </li>
+            )
+          ) : (
+            <>
+              {displayedUsers.map((username) => (
+                <li
+                  key={username}
+                  className={`user-item ${player === username ? 'active' : ''}`}
+                  onClick={() => handleUserClick(username)}
+                >
+                  👤 <span style={{ marginLeft: '8px' }}>{username}</span>
+                </li>
+              ))}
+              {remainingCount > 0 && (
+                <li className="remaining-matches-indicator">
+                  + {remainingCount} more matches. Keep typing to filter...
+                </li>
+              )}
+              {filteredUsers.length === 0 && (
+                <li className="subtext" style={{ padding: '10px' }}>
+                  No matching profiles found
+                </li>
+              )}
+            </>
           )}
         </ul>
       </div>

@@ -1,0 +1,20 @@
+# Runtime Databases & Logs
+data/logs/
+data/maps/
+data/replays/
+data/*.db
+data/model_results/
+recommendation_engine/
+recommendation_matrix/
+*.db
+*.db-journal
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# Model Weight Storage & Binary Artifacts
+models/
+*.pth
+*.pkl
+*.joblib
+*.npy

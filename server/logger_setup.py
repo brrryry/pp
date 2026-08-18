@@ -1,14 +1,25 @@
 import os
+import sys
 import logging
 import datetime
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+if BASE_DIR not in sys.path:
+    sys.path.insert(0, BASE_DIR)
+
+try:
+    import config
+    DEFAULT_LOGS_DIR = config.LOG_PATH
+except ImportError:
+    DEFAULT_LOGS_DIR = os.path.join(BASE_DIR, "data", "logs")
 
 def setup_logger(script_name):
     """
     Configures a logger to write logs to both the console (stdout) 
-    and a log file in the `data/logs/` directory.
+    and a log file in the configured log directory.
     Does not clear the root logger's handlers to avoid stripping Uvicorn access logs.
     """
-    logs_dir = "data/logs"
+    logs_dir = DEFAULT_LOGS_DIR
     os.makedirs(logs_dir, exist_ok=True)
     log_file = os.path.join(logs_dir, f"{script_name}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.log")
     

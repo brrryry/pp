@@ -7,7 +7,7 @@ import unittest
 import sqlite3
 import json
 import time
-from server.DatabaseManager import DatabaseManager
+from server.core.DatabaseManager import DatabaseManager
 
 class TestDatabaseManager(unittest.TestCase):
     
@@ -37,10 +37,9 @@ class TestDatabaseManager(unittest.TestCase):
         conn.close()
         
         self.assertIn("maps", tables)
-        self.assertIn("map_portfolios", tables)
-        self.assertIn("map_stats", tables)
         self.assertIn("replays", tables)
-        self.assertIn("api_scores_cache", tables)
+        self.assertIn("users", tables)
+        self.assertIn("sessions", tables)
 
     def test_add_and_retrieve_map(self):
         # Mock map features
@@ -211,3 +210,15 @@ class TestDatabaseManager(unittest.TestCase):
         # Retrieve cache with case insensitivity
         cache_case = self.db.get_cached_api_scores('youlikecats')
         self.assertIsNotNone(cache_case)
+
+    def test_map_id_storage_and_backfill(self):
+        # Insert a map with explicit map_id
+        map_id = self.db.add_map(map_id=2115389, mapset_id=12345, map_hash="hash_with_map_id", title="Title A")
+        self.assertEqual(map_id, 2115389)
+
+        map_info = self.db.get_map_by_hash("hash_with_map_id")
+        self.assertEqual(map_info.get("beatmap_id"), 2115389)
+
+        # Test backfill method when no maps are missing map_id
+        backfilled = self.db.backfill_missing_map_ids()
+        self.assertEqual(backfilled, 0)

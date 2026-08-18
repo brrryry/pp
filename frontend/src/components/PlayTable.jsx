@@ -91,6 +91,7 @@ function PlayTable({ plays = [], topPlays = [], recentPlays = [], onViewDiagnost
               <th>Beatmap Title</th>
               <th>Difficulty</th>
               <th>Accuracy</th>
+              <th>PP</th>
               <th>Unstable Rate</th>
               <th>Aim Error (px)</th>
               <th>Mods</th>
@@ -100,7 +101,7 @@ function PlayTable({ plays = [], topPlays = [], recentPlays = [], onViewDiagnost
           <tbody>
             {activeData.length === 0 ? (
               <tr>
-                <td colSpan="7" style={{ textAlign: 'center', padding: '30px', color: 'var(--text-secondary)' }}>
+                <td colSpan="8" style={{ textAlign: 'center', padding: '30px', color: 'var(--text-secondary)' }}>
                   No plays found for this category.
                 </td>
               </tr>
@@ -128,6 +129,15 @@ function PlayTable({ plays = [], topPlays = [], recentPlays = [], onViewDiagnost
                     </td>
                     <td className={accClass}>
                       {accPercent.toFixed(2)}%
+                    </td>
+                    <td>
+                      {play.pp !== null && play.pp !== undefined ? (
+                        <span style={{ fontWeight: 600, color: 'hsl(185, 100%, 55%)' }}>
+                          {Math.round(play.pp)}pp
+                        </span>
+                      ) : (
+                        <span className="subtext">-</span>
+                      )}
                     </td>
                     <td className={urClass}>
                       {ur !== null ? ur.toFixed(1) : '-'}

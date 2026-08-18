@@ -1,0 +1,89 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:alpine
+    ports:
+      - "6380:6379"
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ppdb
+      POSTGRES_USER: ppuser
+      POSTGRES_PASSWORD: pppassword
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ppuser -d ppdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: final
+    ports:
+      - "8000:8000"
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - DATABASE_URL=postgresql://ppuser:pppassword@postgres:5432/ppdb
+    volumes:
+      - ./:/app
+      - ./data:/app/data
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    depends_on:
+      redis:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: final
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - DATABASE_URL=postgresql://ppuser:pppassword@postgres:5432/ppdb
+      - PYTHONPATH=/app
+    volumes:
+      - ./:/app
+      - ./data:/app/data
+    depends_on:
+      redis:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+    command: rq worker replay_ingestion --url redis://redis:6379/0
+    restart: unless-stopped
+
+  beatmap-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: final
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - DATABASE_URL=postgresql://ppuser:pppassword@postgres:5432/ppdb
+      - PYTHONPATH=/app
+    volumes:
+      - ./:/app
+      - ./data:/app/data
+    depends_on:
+      redis:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+    command: rq worker beatmap_ingestion --url redis://redis:6379/0
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

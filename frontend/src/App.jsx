@@ -1,21 +1,20 @@
-import React from 'react'
-import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
-import Dashboard from './views/Dashboard'
-import PlayerProfile from './views/PlayerProfile'
-import MapsetView from './views/MapsetView'
+import React from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import UserSearchPage from './views/UserSearchPage';
+import UserProfilePage from './views/UserProfilePage';
 
 function App() {
   return (
-    <HashRouter>
+    <BrowserRouter>
       <div className="glass-bg"></div>
       <Routes>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/player/:player" element={<PlayerProfile />} />
-        <Route path="/mapset/:mapset" element={<MapsetView />} />
+        <Route path="/" element={<UserSearchPage />} />
+        <Route path="/users/" element={<UserSearchPage />} />
+        <Route path="/users/:osu_id" element={<UserProfilePage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </HashRouter>
-  )
+    </BrowserRouter>
+  );
 }
 
-export default App
+export default App;
